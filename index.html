@@ -1,1 +1,287 @@
-<h1> this is a goodbye test</h1>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>毕业网站测试</title>
+    <style>
+        :root {
+            --background-color: #0c0c14;
+            --text-color: #f0f0f0;
+            --primary-color: #00aaff;
+            --card-background: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden; /* Hide scrollbars from the body */
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 2;
+            height: 100vh;
+            overflow-y: auto; /* Allow this container to scroll */
+            overflow-x: hidden;
+            padding: 30px 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(90deg, #ff8a00, #e52e71, #6b5aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        header p {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 10px;
+        }
+
+        #image-gallery {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .gallery-item {
+            background: var(--card-background);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.6s ease;
+        }
+
+        .gallery-item.loaded {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #image-gallery img {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 9 / 16;
+            object-fit: cover;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-bottom: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        .loader {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        .content-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .content-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-wrapper::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            border: 3px solid transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="content-wrapper">
+        <header>
+            <h1>毕业网站测试站</h1>
+            <p>这是一个用于毕业设计项目的前端动态效果及API调用测试页面。</p>
+        </header>
+
+        <main id="image-gallery">
+            <div class="loader">正在加载图片...</div>
+        </main>
+
+        <footer>
+            <p>图片内容来自公共API，随机展示</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 背景动效 ---
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+            let particles = [];
+            let hue = 0;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            class Particle {
+                constructor(x, y) {
+                    this.x = x || Math.random() * width;
+                    this.y = y || Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.8;
+                    this.vy = (Math.random() - 0.5) * 0.8;
+                    this.radius = Math.random() * 2 + 1;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsl(${hue}, 100%, 70%)`;
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                const particleCount = Math.floor(width * height / 15000);
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            function handleParticles() {
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${1 - distance / 100})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                hue = (hue + 0.5) % 360;
+                handleParticles();
+                requestAnimationFrame(animate);
+            }
+
+            initParticles();
+            animate();
+
+            // --- 图片画廊 ---
+            const gallery = document.getElementById('image-gallery');
+            const loader = document.querySelector('.loader');
+            const totalImages = 12;
+            // 使用国内随机图片API (动漫壁纸)
+            const apiUrl = 'https://api.btstu.cn/sjbz/api.php?lx=dongman&method=mobile';
+
+            function loadImage(index) {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+
+                const img = new Image();
+                img.src = `${apiUrl}&_t=${Date.now()}${index}`; // 添加唯一参数防止缓存
+
+                img.onload = () => {
+                    item.appendChild(img);
+                    gallery.appendChild(item);
+                    // 延迟一小段时间再添加 'loaded' 类，以确保CSS transition生效
+                    setTimeout(() => item.classList.add('loaded'), 50);
+                };
+
+                img.onerror = () => {
+                    console.error(`图片加载失败: ${img.src}`);
+                };
+            }
+
+            async function loadGallery() {
+                if(loader) loader.remove();
+                for (let i = 0; i < totalImages; i++) {
+                    loadImage(i);
+                    // 添加一个小的延迟来错开API请求
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            
+            loadGallery();
+        });
+    </script>
+</body>
+</html>
